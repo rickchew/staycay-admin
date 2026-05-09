@@ -156,11 +156,26 @@ POST   /api/v1/cleaning/:bookingId/complete
 PATCH  /api/v1/cleaning/:bookingId/assign              Assign to staff
 ```
 
+### Payment Gateway Configs (Merchant scope)
+```
+GET    /api/v1/gateway-configs                         List merchant's gateway configs
+POST   /api/v1/gateway-configs                         Create gateway config
+GET    /api/v1/gateway-configs/:id                     Get config (masked credentials)
+PATCH  /api/v1/gateway-configs/:id                     Update config
+DELETE /api/v1/gateway-configs/:id                     Soft-delete config
+POST   /api/v1/gateway-configs/:id/set-default         Set as default gateway
+POST   /api/v1/gateway-configs/:id/test                Test gateway connectivity
+```
+
 ### Payments
 ```
+GET    /api/v1/bookings/:id/payments                   List payments for booking
 POST   /api/v1/payments/:bookingId/manual              Record manual payment
-POST   /api/v1/payments/:bookingId/billplz             Initiate Billplz bill
+POST   /api/v1/payments/:bookingId/initiate            Initiate online payment (gateway-agnostic)
+
 POST   /api/v1/webhooks/billplz                        Billplz callback
+POST   /api/v1/webhooks/fiuu                           Fiuu callback
+POST   /api/v1/webhooks/stripe                         Stripe callback
 ```
 
 ---
@@ -226,12 +241,14 @@ Multi-tenancy is enforced in the service layer — never trust client-provided `
 
 ## Webhooks
 
-Inbound webhooks (Billplz, Stripe) follow this pattern:
-1. Verify signature
-2. Persist raw payload to `payments.gatewayResponse`
-3. Update payment + booking status atomically
-4. Return 200 immediately
-5. Trigger downstream notifications via queue
+Each payment gateway has its own webhook endpoint (`/api/v1/webhooks/:gateway`). All follow this pattern:
+1. Route to the gateway-specific webhook controller
+2. Resolve `PaymentGatewayConfig` from the payment record's `gatewayConfigId`
+3. Verify signature using that config's credentials
+4. Persist raw payload to `payments.gatewayResponse`
+5. Update payment + booking status atomically
+6. Return 200 immediately
+7. Trigger downstream notifications via queue
 
 ---
 
@@ -243,6 +260,8 @@ Inbound webhooks (Billplz, Stripe) follow this pattern:
 | `BOOKING_INVALID_DATES` | checkOut <= checkIn |
 | `BOOKING_ALREADY_CANCELLED` | Cancel attempt on cancelled booking |
 | `PAYMENT_GATEWAY_ERROR` | External gateway failure |
+| `PAYMENT_GATEWAY_NOT_CONFIGURED` | Merchant has no active config for requested gateway |
+| `PAYMENT_GATEWAY_CONFIG_INVALID` | Gateway credentials failed validation or connectivity test |
 | `MERCHANT_INACTIVE` | Operation on disabled merchant |
 | `UNIT_INACTIVE` | Operation on deactivated unit |
 | `INSUFFICIENT_LOYALTY_POINTS` | Stage 2 — redemption failure |

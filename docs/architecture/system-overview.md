@@ -35,7 +35,7 @@ A multi-tenant SaaS platform for property owners (merchants) to manage room/unit
 | Queue | BullMQ + Redis |
 | Cache | Redis |
 | Auth | JWT (access + refresh) + RBAC |
-| Payments | Billplz (Stage 1), Stripe (Stage 2) |
+| Payments | Modular gateway system (Billplz, Fiuu, Stripe, etc.) |
 | Storage | Cloudflare R2 or Supabase Storage |
 | Email | Resend or Postmark |
 | Monorepo | Turborepo |
@@ -106,10 +106,10 @@ Authorization is enforced via NestJS Guards using `@Roles()` decorators on contr
 | `listings` | Listing + unit CRUD |
 | `bookings` | Booking engine, availability |
 | `cleaning` | Cleaning workflow |
-| `payments` | Manual + Billplz integration |
+| `payments` | Modular multi-gateway payments |
 | `notifications` | Email / in-app |
 
-Stage 2 will add `loyalty`, `customers` (public profile), and full Billplz/Stripe payment flows.
+Stage 2 will add `loyalty`, `customers` (public profile), and additional payment gateways.
 
 ---
 

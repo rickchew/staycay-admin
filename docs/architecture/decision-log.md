@@ -135,7 +135,7 @@ Use Prisma.
 
 ## DL-007 — Billplz First, Stripe Second
 **Date:** 2026-05-09
-**Status:** Accepted
+**Status:** Superseded by DL-011
 
 ### Context
 Malaysian market needs FPX (online banking) which is the dominant payment method.
@@ -148,6 +148,9 @@ Integrate Billplz for Stage 1 (FPX + cards). Add Stripe in Stage 2 for internati
 - Simple API, fast onboarding
 - FPX coverage essential for local customers
 - Stripe added later for international expansion + recurring payments
+
+### Superseded
+Replaced by DL-011 — modular multi-gateway architecture. The platform now supports multiple gateways from day one rather than hardcoding Billplz first.
 
 ---
 
@@ -205,6 +208,37 @@ User-facing entities (User, Merchant, Property, Listing, ListingUnit) use `isAct
 
 ### Exception
 `RefreshToken` and `Notification` use hard deletes — no audit value.
+
+---
+
+## DL-011 — Modular Multi-Gateway Payment Architecture
+**Date:** 2026-05-09
+**Status:** Accepted (supersedes DL-007)
+
+### Context
+Different merchants prefer different payment gateways. Some need Billplz for FPX, others use Fiuu for card processing. A single merchant may want both. Hardcoding gateway order (Billplz first, Stripe later) doesn't support this.
+
+### Decision
+Design the payment system as a modular gateway registry. Each gateway implements a common `PaymentGateway` interface. Merchants configure their own gateway credentials via `PaymentGatewayConfig` records — one per gateway per merchant. Gateways can be added by implementing the interface and registering in the gateway registry, with zero changes to the service layer.
+
+### Rationale
+- Merchants in Malaysia use a mix of Billplz, Fiuu, and manual payments — forcing one gateway doesn't work
+- A merchant can enable Billplz for FPX and Fiuu for international cards simultaneously
+- Adding a new gateway (e.g., Stripe, SenangPay) requires only: (1) implement the interface, (2) add webhook controller, (3) register in the gateway registry
+- Per-merchant credentials stored in `PaymentGatewayConfig` with encrypted JSON — no env vars per gateway per merchant
+- Service layer is fully gateway-agnostic: it calls `gateway.initiate()`, `gateway.verifyWebhook()`, `gateway.parseWebhook()` without knowing which gateway it's talking to
+
+### Trade-offs Accepted
+- More upfront complexity than hardcoding Billplz
+- Credential encryption adds a layer of indirection
+- Each new gateway needs its own webhook controller (webhooks have different payload shapes and signature mechanisms)
+
+### Implementation Notes
+- Gateway interface: `initiate`, `verifyWebhook`, `parseWebhook`, `refund`
+- Gateway registry: `Map<GatewayName, PaymentGateway>` — injected via NestJS DI
+- Webhook routing: `/api/v1/webhooks/:gateway` with per-gateway controllers
+- `MANUAL` is a special gateway that skips initiation and sets status to PAID immediately
+- `credentials` JSON shape varies per gateway — validated at config creation time using gateway-specific schemas
 
 ---
 

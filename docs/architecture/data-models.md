@@ -9,10 +9,12 @@
 
 ```
 User ─────┬───→ MerchantMember ───→ Merchant
+          │                           │
+          │                           └───→ PaymentGatewayConfig
           │
           ├───→ Booking ───→ ListingUnit ───→ Listing ───→ Property ───→ Merchant
           │       │
-          │       ├───→ Payment
+          │       ├───→ Payment ───→ PaymentGatewayConfig
           │       └───→ CleaningLog
           │
           ├───→ LoyaltyAccount ───→ LoyaltyTransaction
@@ -87,12 +89,36 @@ Core transactional entity.
 
 **Important:** `dailyRate` is copied from `Listing.dailyRate` at booking creation. Never join back to `Listing` for historical pricing.
 
+### PaymentGatewayConfig
+Per-merchant gateway credentials. A merchant can have multiple configs (e.g., Billplz for FPX + Fiuu for cards).
+
+| Field | Notes |
+|---|---|
+| `id` | cuid PK |
+| `merchantId` | FK to Merchant |
+| `gateway` | `BILLPLZ` / `FIUU` / `STRIPE` / `MANUAL` (enum, extensible) |
+| `displayName` | Merchant-facing label, e.g. "Billplz FPX" |
+| `credentials` | Encrypted JSON blob — API keys, secrets, collection IDs per gateway |
+| `isDefault` | Only one config per merchant can be default |
+| `isSandbox` | Whether this config uses the gateway's sandbox/test environment |
+| `isActive` | Soft delete flag |
+| `createdAt` | |
+| `updatedAt` | |
+
+**Important:** `credentials` is encrypted at rest. Never return raw credentials in API responses — return masked values only (e.g., `"api_key": "sk_...7f2a"`).
+
+Each gateway type has its own credential shape stored in the JSON blob:
+- **Billplz:** `{ apiKey, collectionId, xSignatureKey }`
+- **Fiuu:** `{ merchantId, verifyKey, secretKey }`
+- **Stripe:** `{ secretKey, webhookSecret }`
+
 ### Payment
 One booking can have multiple payments (deposit + final, partial refunds, etc.).
 
 | Field | Notes |
 |---|---|
-| `gateway` | `BILLPLZ` / `STRIPE` / `MANUAL` |
+| `gatewayConfigId` | FK to PaymentGatewayConfig (null for MANUAL) |
+| `gateway` | Denormalized from config: `BILLPLZ` / `FIUU` / `STRIPE` / `MANUAL` |
 | `gatewayRefId` | External ID for reconciliation |
 | `gatewayResponse` | Full webhook payload preserved as JSON |
 
@@ -119,6 +145,9 @@ Already declared in schema:
 - `bookings` — composite index on `(checkIn, checkOut)` for availability queries
 - `bookings` — index on `unitId` for occupancy lookups
 - `bookings` — index on `bookingRef` for customer support lookups
+- `payment_gateway_configs` — unique index on `(merchantId, gateway, isDefault)` where `isDefault = true`
+- `payments` — index on `gatewayConfigId` for gateway-scoped queries
+- `payments` — index on `gatewayRefId` for webhook lookups
 - `audit_logs` — composite index on `(entity, entityId)` for entity history
 - `notifications` — composite index on `(userId, isRead)` for unread badge queries
 

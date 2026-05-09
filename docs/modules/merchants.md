@@ -52,7 +52,7 @@ DELETE /api/v1/merchants/me/members/:id     MERCHANT_OWNER — remove member
 - Soft-deleting a merchant sets `isActive: false`. All associated data remains but becomes inaccessible.
 - A merchant cannot be deactivated if it has active bookings (CONFIRMED or CHECKED_IN).
 - `businessRegNo` (SSM number) is optional but must be unique if provided.
-- `settings` JSON stores merchant-specific config: payment preferences, branding, policy toggles (e.g., `deposit_confirms_booking`).
+- `settings` JSON stores merchant-specific config: branding, policy toggles (e.g., `deposit_confirms_booking`, `accept_manual_payments`). Payment gateway credentials are stored separately in `PaymentGatewayConfig` records (see payments module).
 - A user can only belong to one merchant (enforced by `@unique` on `MerchantMember.userId`).
 
 ---

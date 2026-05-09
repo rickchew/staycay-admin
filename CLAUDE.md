@@ -59,6 +59,20 @@ Modules communicate via events (BullMQ), never via direct cross-module method ca
 - **Respect existing decisions.** Read the decision log before suggesting alternatives.
 - **Test multi-tenancy.** Any new endpoint or query must be merchant-scoped.
 
+## After Every New Decision or Feature
+
+Whenever a new architectural decision is made, a feature is added, or business logic changes:
+
+1. **Update all affected docs** in `/docs/`:
+   - `docs/architecture/system-overview.md` — if stack, modules, or structure changed
+   - `docs/architecture/data-models.md` — if entities, fields, or relationships changed
+   - `docs/architecture/business-rules.md` — if business rules added/modified
+   - `docs/architecture/decision-log.md` — append new entry for architectural decisions
+   - `docs/architecture/api-contracts.md` — if endpoints, response shapes, or error codes changed
+   - `docs/modules/{module}.md` — if module behaviour, endpoints, or events changed
+2. **Update `README.md`** — if the change affects stack, structure, or getting started instructions
+3. **Commit and push** — after all doc updates are complete, commit everything together and push
+
 ---
 
 ## Roadmap

@@ -74,6 +74,19 @@ Webhook handlers must be idempotent:
 - If exists, update existing record (do not create duplicate)
 - Always return 200 to gateway, even on duplicate
 
+### BR-105 — Gateway Configuration
+- Each merchant can configure multiple payment gateways (e.g., Billplz for FPX, Fiuu for cards)
+- Exactly one gateway config per merchant must be marked `isDefault`
+- Gateway credentials are encrypted at rest and never returned in full via the API
+- A gateway config cannot be deactivated if it has pending (UNPAID) payments
+- When initiating a payment, the merchant can specify which gateway config to use; if omitted, the default is used
+
+### BR-106 — Gateway Routing
+- Each payment is tied to a specific `PaymentGatewayConfig` via `gatewayConfigId`
+- Webhooks are routed to the correct gateway handler based on the webhook URL path (`/webhooks/billplz`, `/webhooks/fiuu`, etc.)
+- The gateway handler resolves the `PaymentGatewayConfig` from the payment's `gatewayConfigId` to verify signatures using the correct credentials
+- `MANUAL` payments do not require a gateway config — `gatewayConfigId` is null
+
 ---
 
 ## Cleaning Rules
@@ -145,6 +158,7 @@ Points expire 24 months after earning if not redeemed.
 The following actions must produce an `AuditLog` entry:
 - Booking create / update / cancel / check-in / check-out
 - Payment create / refund
+- Payment gateway config create / update / deactivate
 - User role changes
 - Merchant settings changes
 - Listing rate changes

@@ -30,7 +30,7 @@ A multi-tenant SaaS platform for property owners (merchants) to manage room/unit
 | Backend | NestJS (Node.js, TypeScript) |
 | Database | PostgreSQL 16 |
 | ORM | Prisma |
-| Frontend | Next.js (App Router) + Tailwind CSS |
+| Frontend | Next.js (App Router) + Tailwind CSS + shadcn/ui |
 | Mobile | React Native (Expo) — Stage 3 |
 | Queue | BullMQ + Redis |
 | Cache | Redis |
@@ -55,7 +55,7 @@ A multi-tenant SaaS platform for property owners (merchants) to manage room/unit
 /packages
   /database     Prisma schema + generated client (shared)
   /types        Shared TypeScript interfaces and DTOs
-  /ui           Shared component library
+  /ui           Shared component library (promoted shadcn/ui components used across apps)
   /utils        Shared helpers (date, currency, formatting)
   /config       Base eslint, tsconfig, tailwind configs
 

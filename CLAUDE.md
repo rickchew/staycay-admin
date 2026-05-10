@@ -9,7 +9,7 @@
 
 A multi-tenant SaaS platform for property owners to manage room/unit bookings, cleaning, and customer interactions in Malaysia.
 
-**Stack:** NestJS · PostgreSQL · Prisma · Next.js · Turborepo · TypeScript
+**Stack:** NestJS · PostgreSQL · Prisma · Next.js · shadcn/ui · Turborepo · TypeScript
 
 ---
 
@@ -48,6 +48,16 @@ DTO          → Request/response shapes (class-validator)
 ```
 
 Modules communicate via events (BullMQ), never via direct cross-module method calls.
+
+---
+
+## Frontend Conventions (Portal)
+
+- **Component library** → shadcn/ui. Use `npx shadcn@latest add <component>` to add new components.
+- **Component location** → `/apps/portal/components/ui/` for shadcn components; `/apps/portal/components/` for page-level compositions.
+- **Promoting to shared** → If a component is needed across multiple apps, move it to `packages/ui/`. Never run `shadcn init` inside `packages/ui`.
+- **No custom CSS** → Style exclusively with Tailwind utility classes. Never write raw CSS or CSS modules.
+- **Accessible primitives** → shadcn components are Radix-based — do not swap them for native HTML elements to avoid breaking accessibility.
 
 ---
 

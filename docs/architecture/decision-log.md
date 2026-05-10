@@ -242,6 +242,35 @@ Design the payment system as a modular gateway registry. Each gateway implements
 
 ---
 
+## DL-012 — shadcn/ui as Admin Portal Component System
+**Date:** 2026-05-10
+**Status:** Accepted
+
+### Context
+The management portal (`/apps/portal`) needed a component library. Tailwind CSS alone provides utilities but not pre-built accessible components (modals, tables, forms, date pickers). A consistent, opinionated component system reduces duplication and keeps UI coherent.
+
+### Decision
+Adopt shadcn/ui for the admin portal. Components live in `/apps/portal/components/ui/` (shadcn's copy-in pattern). Components needed across multiple apps are promoted to `packages/ui/`.
+
+### Rationale
+- shadcn/ui is copy-paste, not a dependency — full ownership of component code
+- Built on Radix UI primitives (WAI-ARIA accessibility out of the box)
+- Tailwind-native — zero extra CSS paradigm to learn
+- Excellent TypeScript support
+- Components are customisable without fighting a library's internal API
+
+### Trade-offs Accepted
+- Components must be manually updated when shadcn releases new versions (no npm upgrade path)
+- Slightly more boilerplate than a traditional component library like MUI or Chakra
+
+### Implementation Notes
+- Install via: `npx shadcn@latest init` in `/apps/portal`
+- Component source lives at `/apps/portal/components/ui/`
+- If a component is needed in both portal and web (Stage 2), promote it to `packages/ui/`
+- Do not run `shadcn init` inside `packages/ui` — shadcn requires a Next.js app context
+
+---
+
 ## Template for New Entries
 
 ```

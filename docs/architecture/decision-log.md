@@ -271,6 +271,27 @@ Adopt shadcn/ui for the admin portal. Components live in `/apps/portal/component
 
 ---
 
+## DL-013 — Cloudflare Workers for Admin Portal Hosting
+**Date:** 2026-05-11
+**Status:** Accepted
+
+### Context
+Need a hosting platform for the Next.js admin portal (`apps/portal`).
+
+### Decision
+Deploy `apps/portal` to Cloudflare Workers via the OpenNext adapter (`@opennextjs/cloudflare`). Next.js upgraded from 15.0.4 to 16.x as required by the adapter.
+
+### Rationale
+- Cloudflare Workers provides edge deployment close to Malaysian users
+- OpenNext is the officially recommended adapter (replaces deprecated `@cloudflare/next-on-pages`)
+- No server infrastructure to manage
+
+### Trade-offs Accepted
+- `next/image` optimisation disabled (`unoptimized: true`) — Workers does not support the Node.js image pipeline
+- Node.js-only APIs unavailable at runtime; all DB access must go through the NestJS API
+
+---
+
 ## Template for New Entries
 
 ```

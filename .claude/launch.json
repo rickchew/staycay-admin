@@ -7,6 +7,14 @@
       "runtimeArgs": ["run", "dev", "--prefix", "apps/portal"],
       "port": 3001,
       "autoPort": false
+    },
+    {
+      "name": "portal-cf",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--prefix", "apps/portal", "opennextjs-cloudflare", "preview"],
+      "cwd": "apps/portal",
+      "port": 8787,
+      "autoPort": false
     }
   ]
 }

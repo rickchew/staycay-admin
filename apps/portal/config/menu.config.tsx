@@ -67,6 +67,11 @@ export const MENU_SIDEBAR: MenuConfig = [
     path: '/bookings',
   },
   {
+    title: 'Guests',
+    icon: UserCheck,
+    path: '/guests',
+  },
+  {
     title: 'Cleaning',
     icon: Kanban,
     path: '/cleaning',
@@ -78,14 +83,14 @@ export const MENU_SIDEBAR: MenuConfig = [
   },
   { heading: 'Inventory' },
   {
-    title: 'Properties',
-    icon: Building,
-    path: '/properties',
-  },
-  {
     title: 'Listings',
     icon: Grid,
     path: '/listings',
+  },
+  {
+    title: 'Buildings',
+    icon: Building,
+    path: '/buildings',
   },
   { heading: 'Administration' },
   {

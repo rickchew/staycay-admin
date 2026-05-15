@@ -14,7 +14,7 @@
 | 3 | Next.js portal shell + login + auth session | Login → empty dashboard → logout works |
 | 4 | Users, merchants & members management | SUPER_ADMIN creates merchant + owner; staff added; tenancy enforced |
 | 5 | Properties, listings & units | Merchant creates property, listing with N units; availability API works |
-| 6 | Booking engine + manual payments | Full cash-booking lifecycle: create → pay → confirm → check-in → check-out |
+| 6 | Booking engine + manual payments + guestbook + channel tagging | Full cash-booking lifecycle (create → pay → confirm → check-in → check-out) plus per-merchant guest list with history, VIP, blacklist, and channel-origin tagging (Agoda / Booking.com / Airbnb / Direct) |
 | 7 | Cleaning workflow + notifications | Cleaning queue auto-populates on checkout; emails fire on events |
 | 8 | Multi-gateway online payments | Billplz + Fiuu live alongside manual payments |
 | 9 | Deployment, observability & hardening | Portal on Cloudflare Workers, API on managed host, production-ready |
@@ -195,7 +195,9 @@ Availability + occupancy APIs land HERE, not in the bookings stage — so the bo
 ### Tasks
 
 - `bookings` module structure per `bookings.md`: controller, service, repository, `/dto`, `/helpers` (`booking-ref.generator`, `availability.checker`, `nights.calculator`), `/events`
-- `POST /bookings` — runs availability check via Stage 5 primitive, snapshots `dailyRate` + computes `nights` at creation, generates `BK-YYYY-NNNNN` ref via Postgres sequence (atomic, never derived)
+- `guests` module per `guests.md`: find-or-create on `(merchantId, email|phone)`, denormalized counter listeners, blacklist + VIP flags, `/guests` + `/guests/:id` endpoints (read + patch only — no direct create)
+- `channels` module per `channels.md` (MVP scope only): seed the global `Channel` registry (DIRECT / AGODA / BOOKING_COM / AIRBNB / EXPEDIA / OTHER), expose `GET /channels` and `GET /reports/channel-mix`
+- `POST /bookings` — runs availability check via Stage 5 primitive, calls `guests.findOrCreate`, snapshots `dailyRate` + `guestName`/`guestEmail`/`guestPhone` + computes `nights` at creation, generates `BK-YYYY-NNNNN` ref via Postgres sequence (atomic, never derived); rejects with `GUEST_BLACKLISTED` per BR-G04
 - `GET /bookings` with filters (status, checkInFrom, checkInTo, propertyId, unitId) — paginated, merchant-scoped
 - `GET /bookings/:id` — full booking detail with `payments[]`, `cleaningLogs[]`, unit→listing→property→merchant chain
 - `PATCH /bookings/:id` — limited fields editable (guestName, specialRequest, notes); rate NEVER editable post-creation
@@ -206,14 +208,17 @@ Availability + occupancy APIs land HERE, not in the bookings stage — so the bo
 - `GET /bookings/:id/payments` — list payments for a booking
 - Payment status calculator (BR-101): UNPAID / PARTIAL / PAID / REFUNDED from sum of payments — recalc fires on every payment create
 - Booking auto-confirm (BR-102): PENDING → CONFIRMED on PAID, OR PARTIAL + `merchant.settings.deposit_confirms_booking`
-- Portal `/bookings` — list with filters + create form (date picker, unit selector, guest details)
-- Portal `/bookings/:id` — detail view with lifecycle action buttons, payment panel with "Record manual payment" form
+- Portal `/bookings` — list with filters (including channel filter) + create form (date picker, unit selector, guest details, **channel dropdown defaulting to DIRECT**, optional `externalBookingRef`)
+- Portal `/bookings/:id` — detail view with lifecycle action buttons, payment panel with "Record manual payment" form, **channel badge**, guest mini-card with VIP/blacklist badges + link to `/guests/:id`
+- Portal `/guests` — guestbook DataGrid (name, contact, total bookings, last stay, VIP/blacklist status)
+- Portal `/guests/:id` — guest detail with booking history table and notes editor
+- Dashboard — "Channel mix" card (last 30 days bookings + revenue grouped by channel, fed by `/reports/channel-mix`)
 - Event emission via BullMQ for `booking.created` / `booking.confirmed` / `booking.cancelled` / `booking.checked-in` / `booking.checked-out` — handlers are no-ops for now, just observable in queue
 - e2e: create booking → record full manual payment → assert auto-confirmed → check-in → check-out → see `booking.checked-out` event in queue
 
 ### Deliverables
 
-Bookings module · Manual payments · Payment status calc · Auto-confirmation logic · Booking UI · Event emission
+Bookings module · Guests module (guestbook) · Channels registry + channel tagging on bookings · Manual payments · Payment status calc · Auto-confirmation logic · Booking UI · Guest UI · Channel-mix dashboard · Event emission
 
 ### Runs Independently
 
@@ -358,5 +363,6 @@ These remain dormant during the 9 stages above and activate later:
 - Customer registration (`POST /auth/register`)
 - Loyalty module activation (schema exists per DL-009 — wire endpoints, listeners, expiry cron)
 - Stripe gateway (additional implementation against the same `PaymentGateway` interface — zero changes to existing code per DL-011)
+- **Channel sync** — `ChannelAccount` (encrypted credentials), `ChannelListing` (per-listing mapping), outbound availability/rate push, inbound booking webhooks, channel-aware cancellation. Schema scaffolded in `data-models.md` and dormant in MVP; activated in Stage 2 per `channels.md`.
 - Bahasa Malaysia + Chinese Simplified i18n (BR-603)
 - Mobile apps (Stage 3 of product roadmap)

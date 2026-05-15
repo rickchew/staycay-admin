@@ -156,6 +156,37 @@ POST   /api/v1/cleaning/:bookingId/complete
 PATCH  /api/v1/cleaning/:bookingId/assign              Assign to staff
 ```
 
+### Guests (Merchant scope)
+```
+GET    /api/v1/guests                                  List guestbook (search, vip, blacklisted, sort)
+GET    /api/v1/guests/:id                              Guest profile + recent bookings
+GET    /api/v1/guests/:id/bookings                     Paginated booking history
+PATCH  /api/v1/guests/:id                              Update notes, VIP flag, identity fields
+POST   /api/v1/guests/:id/blacklist                    Blacklist (requires reason)
+DELETE /api/v1/guests/:id/blacklist                    Lift blacklist
+GET    /api/v1/admin/guests                            SUPER_ADMIN cross-merchant view
+```
+Note: there is intentionally **no `POST /guests`** endpoint — guest rows are created implicitly by the booking flow (BR-G02).
+
+### Channels (MVP — registry + reporting)
+```
+GET    /api/v1/channels                                List active channels (global registry)
+GET    /api/v1/reports/channel-mix?from=&to=           Booking + revenue breakdown by channel
+```
+`POST /bookings` accepts `channelId` and `externalBookingRef` in the body (BR-CH02).
+
+### Channel Accounts & Listings *(Stage 2 of product roadmap — placeholder)*
+```
+GET    /api/v1/channel-accounts                        List merchant's connected channels
+POST   /api/v1/channel-accounts                        Connect a channel (encrypted creds)
+PATCH  /api/v1/channel-accounts/:id                    Update creds / commission
+POST   /api/v1/channel-accounts/:id/test               Validate credentials
+GET    /api/v1/listings/:id/channel-listings           Per-listing channel sync status
+POST   /api/v1/listings/:id/channel-listings           Map listing to a channel account
+PATCH  /api/v1/channel-listings/:id                    Update external ID / rate adjustment
+POST   /api/v1/channel-listings/:id/resync             Force re-push of rates & availability
+```
+
 ### Payment Gateway Configs (Merchant scope)
 ```
 GET    /api/v1/gateway-configs                         List merchant's gateway configs
@@ -264,4 +295,8 @@ Each payment gateway has its own webhook endpoint (`/api/v1/webhooks/:gateway`).
 | `PAYMENT_GATEWAY_CONFIG_INVALID` | Gateway credentials failed validation or connectivity test |
 | `MERCHANT_INACTIVE` | Operation on disabled merchant |
 | `UNIT_INACTIVE` | Operation on deactivated unit |
+| `GUEST_BLACKLISTED` | Booking attempt for a blacklisted guest at this merchant (BR-G04) |
+| `CHANNEL_UNKNOWN` | `channelId` does not exist in the global registry (BR-CH01) |
+| `CHANNEL_SYNC_FAILED` | Stage 2 — outbound rate/availability push failed |
+| `CHANNEL_CREDENTIALS_INVALID` | Stage 2 — connect/test failed against the channel API |
 | `INSUFFICIENT_LOYALTY_POINTS` | Stage 2 — redemption failure |

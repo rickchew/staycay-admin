@@ -1,20 +1,10 @@
 import { DropdownMenu4 } from '@/partials/dropdown-menu/dropdown-menu-4';
 import { type RemixiconComponentType } from '@remixicon/react';
-import {
-  ArrowDown,
-  ArrowUp,
-  CalendarCheck,
-  CheckCircle2,
-  Clock,
-  EllipsisVertical,
-  LogIn,
-  XCircle,
-  type LucideIcon,
-} from 'lucide-react';
+import { EllipsisVertical, type LucideIcon } from 'lucide-react';
 import { Badge, BadgeDot } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MOCK_BOOKINGS } from '@/lib/mock';
+import { CHANNEL_MIX } from '@/lib/mock';
 
 interface IHighlightsRow {
   icon: LucideIcon | RemixiconComponentType;
@@ -35,69 +25,22 @@ interface IHighlightsProps {
   limit?: number;
 }
 
-const Highlights = ({ limit }: IHighlightsProps) => {
-  const totalBookings = MOCK_BOOKINGS.length;
-  const confirmed = MOCK_BOOKINGS.filter((b) => b.status === 'CONFIRMED').length;
-  const checkedIn = MOCK_BOOKINGS.filter((b) => b.status === 'CHECKED_IN').length;
-  const checkedOut = MOCK_BOOKINGS.filter((b) => b.status === 'CHECKED_OUT').length;
-  const pending = MOCK_BOOKINGS.filter((b) => b.status === 'PENDING').length;
-  const cancelled = MOCK_BOOKINGS.filter((b) => b.status === 'CANCELLED').length;
-  const totalRevenue = MOCK_BOOKINGS.filter((b) => b.paymentStatus === 'PAID').reduce((s, b) => s + b.paidAmount, 0);
+const Highlights = ({ limit: _limit }: IHighlightsProps) => {
+  const totalBookings = CHANNEL_MIX.reduce((s, c) => s + c.bookings, 0);
+  const totalRevenue = CHANNEL_MIX.reduce((s, c) => s + c.revenue, 0);
 
-  const rows: IHighlightsRows = [
-    { icon: CheckCircle2, text: 'Confirmed', total: confirmed, stats: 3.9, increase: true },
-    { icon: LogIn, text: 'Checked-in', total: checkedIn, stats: 1.4, increase: true },
-    { icon: CalendarCheck, text: 'Checked-out', total: checkedOut, stats: 2.1, increase: true },
-    { icon: Clock, text: 'Pending', total: pending, stats: 0.7, increase: false },
-    { icon: XCircle, text: 'Cancelled', total: cancelled, stats: 0.4, increase: false },
-  ];
-
-  const items: IHighlightsItems = [
-    { badgeColor: 'bg-green-500', label: 'Paid' },
-    { badgeColor: 'bg-amber-500', label: 'Partial' },
-    { badgeColor: 'bg-destructive', label: 'Unpaid' },
-  ];
-
-  const renderRow = (row: IHighlightsRow, index: number) => {
-    return (
-      <div
-        key={index}
-        className="flex items-center justify-between flex-wrap gap-2"
-      >
-        <div className="flex items-center gap-1.5">
-          <row.icon className="size-4.5 text-muted-foreground" />
-          <span className="text-sm font-normal text-mono">{row.text}</span>
-        </div>
-        <div className="flex items-center text-sm font-medium text-foreground gap-6">
-          <span className="lg:text-right">{row.total}</span>
-          <span className="flex items-center justify-end gap-1">
-            {row.increase ? (
-              <ArrowUp className="text-green-500 size-4" />
-            ) : (
-              <ArrowDown className="text-destructive size-4" />
-            )}
-            {row.stats}%
-          </span>
-        </div>
-      </div>
-    );
-  };
-
-  const renderItem = (item: IHighlightsItem, index: number) => {
-    return (
-      <div key={index} className="flex items-center gap-1.5">
-        <BadgeDot className={item.badgeColor} />
-        <span className="text-sm font-normal text-foreground">
-          {item.label}
-        </span>
-      </div>
-    );
-  };
+  const bars = CHANNEL_MIX.filter((c) => c.bookings > 0).map((c) => ({
+    color: c.channel.color,
+    label: c.channel.name,
+    bookings: c.bookings,
+    revenue: c.revenue,
+    pct: totalBookings > 0 ? (c.bookings / totalBookings) * 100 : 0,
+  }));
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Highlights</CardTitle>
+        <CardTitle>Channel mix</CardTitle>
         <DropdownMenu4
           trigger={
             <Button variant="ghost" mode="icon">
@@ -109,27 +52,43 @@ const Highlights = ({ limit }: IHighlightsProps) => {
       <CardContent className="flex flex-col gap-4 p-5 lg:p-7.5 lg:pt-4">
         <div className="flex flex-col gap-0.5">
           <span className="text-sm font-normal text-secondary-foreground">
-            Total bookings · Paid revenue
+            Bookings · Paid revenue this period
           </span>
           <div className="flex items-center gap-2.5">
-            <span className="text-3xl font-semibold text-mono">RM {(totalRevenue / 1000).toFixed(1)}k</span>
+            <span className="text-3xl font-semibold text-mono">
+              RM {(totalRevenue / 1000).toFixed(1)}k
+            </span>
             <Badge size="sm" variant="success" appearance="light">
               {totalBookings} bookings
             </Badge>
           </div>
         </div>
-        <div className="flex items-center gap-1 mb-1.5">
-          <div className="bg-green-500 h-2 w-full max-w-[65%] rounded-xs"></div>
-          <div className="bg-amber-500 h-2 w-full max-w-[20%] rounded-xs"></div>
-          <div className="bg-destructive h-2 w-full max-w-[15%] rounded-xs"></div>
+        <div className="flex items-center gap-1 mb-1.5 h-2">
+          {bars.map((b) => (
+            <div
+              key={b.label}
+              className={`${b.color} h-full rounded-xs`}
+              style={{ width: `${b.pct}%` }}
+              title={`${b.label} · ${b.bookings} bookings`}
+            />
+          ))}
         </div>
-        <div className="flex items-center flex-wrap gap-4 mb-1">
-          {items.map((item, index) => {
-            return renderItem(item, index);
-          })}
+        <div className="flex flex-col gap-2">
+          {bars.map((b) => (
+            <div key={b.label} className="flex items-center justify-between text-sm">
+              <span className="inline-flex items-center gap-1.5 text-foreground">
+                <span className={`h-2 w-2 rounded-full ${b.color}`} />
+                {b.label}
+              </span>
+              <span className="flex items-center gap-4 text-muted-foreground">
+                <span>{b.bookings}</span>
+                <span className="text-foreground font-medium">
+                  RM {(b.revenue / 1000).toFixed(1)}k
+                </span>
+              </span>
+            </div>
+          ))}
         </div>
-        <div className="border-b border-input"></div>
-        <div className="grid gap-3">{rows.slice(0, limit).map(renderRow)}</div>
       </CardContent>
     </Card>
   );

@@ -12,7 +12,7 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { Plus, Search, X } from 'lucide-react';
+import { Building2, Plus, Search, X } from 'lucide-react';
 import {
   Toolbar,
   ToolbarActions,
@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
+  CardContent,
   CardFooter,
   CardHeader,
   CardTable,
@@ -35,7 +36,23 @@ import { DataGridPagination } from '@/components/ui/data-grid-pagination';
 import { DataGridTable } from '@/components/ui/data-grid-table';
 import { Input } from '@/components/ui/input';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { MOCK_LISTINGS, type Listing } from '@/lib/mock';
+import { MOCK_LISTINGS, MOCK_PROPERTIES, type Listing } from '@/lib/mock';
+
+type GroupMode = 'flat' | 'byProperty' | 'byBuilding';
+
+type EnrichedListing = Listing & {
+  buildingId: string | null;
+  buildingName: string | null;
+};
+
+const ENRICHED: EnrichedListing[] = MOCK_LISTINGS.map((l) => {
+  const property = MOCK_PROPERTIES.find((p) => p.id === l.propertyId);
+  return {
+    ...l,
+    buildingId: property?.buildingId ?? null,
+    buildingName: property?.buildingName ?? null,
+  };
+});
 
 export default function ListingsPage() {
   const [pagination, setPagination] = useState<PaginationState>({
@@ -46,18 +63,20 @@ export default function ListingsPage() {
     { id: 'rate', desc: true },
   ]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [groupMode, setGroupMode] = useState<GroupMode>('flat');
 
   const filtered = useMemo(() => {
-    if (!searchQuery) return MOCK_LISTINGS;
+    if (!searchQuery) return ENRICHED;
     const q = searchQuery.toLowerCase();
-    return MOCK_LISTINGS.filter(
+    return ENRICHED.filter(
       (l) =>
         l.name.toLowerCase().includes(q) ||
-        l.propertyName.toLowerCase().includes(q),
+        l.propertyName.toLowerCase().includes(q) ||
+        (l.buildingName ?? '').toLowerCase().includes(q),
     );
   }, [searchQuery]);
 
-  const columns = useMemo<ColumnDef<Listing>[]>(
+  const columns = useMemo<ColumnDef<EnrichedListing>[]>(
     () => [
       {
         id: 'listing',
@@ -66,19 +85,37 @@ export default function ListingsPage() {
           <DataGridColumnHeader title="Listing" column={column} />
         ),
         cell: ({ row }) => (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-1">
             <Link
               href={`/properties/${row.original.propertyId}/listings/${row.original.id}`}
               className="text-sm font-medium text-mono hover:text-primary"
             >
               {row.original.name}
             </Link>
-            <span className="text-xs text-muted-foreground">
-              {row.original.propertyName}
-            </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Link
+                href={`/properties/${row.original.propertyId}`}
+                className="text-xs text-muted-foreground hover:text-primary"
+              >
+                {row.original.propertyName}
+              </Link>
+              {row.original.buildingId && (
+                <Link href={`/buildings/${row.original.buildingId}`}>
+                  <Badge
+                    size="sm"
+                    variant="secondary"
+                    appearance="light"
+                    className="gap-1"
+                  >
+                    <Building2 size={10} />
+                    {row.original.buildingName}
+                  </Badge>
+                </Link>
+              )}
+            </div>
           </div>
         ),
-        size: 280,
+        size: 320,
       },
       {
         id: 'capacity',
@@ -161,13 +198,38 @@ export default function ListingsPage() {
     getSortedRowModel: getSortedRowModel(),
   });
 
+  // Grouped views
+  const groupedByProperty = useMemo(() => {
+    const map = new Map<string, { property: string; propertyId: string; rows: EnrichedListing[] }>();
+    for (const l of filtered) {
+      if (!map.has(l.propertyId)) {
+        map.set(l.propertyId, { property: l.propertyName, propertyId: l.propertyId, rows: [] });
+      }
+      map.get(l.propertyId)!.rows.push(l);
+    }
+    return Array.from(map.values());
+  }, [filtered]);
+
+  const groupedByBuilding = useMemo(() => {
+    const map = new Map<string, { name: string; buildingId: string | null; rows: EnrichedListing[] }>();
+    for (const l of filtered) {
+      const key = l.buildingId ?? 'standalone';
+      const name = l.buildingName ?? 'Standalone (not in a building)';
+      if (!map.has(key)) {
+        map.set(key, { name, buildingId: l.buildingId, rows: [] });
+      }
+      map.get(key)!.rows.push(l);
+    }
+    return Array.from(map.values());
+  }, [filtered]);
+
   return (
     <Fragment>
       <Container>
         <Toolbar>
           <ToolbarHeading
             title="Listings"
-            description="Bookable room or unit types across all properties"
+            description="Everything bookable across your portfolio"
           />
           <ToolbarActions>
             <Button>
@@ -184,40 +246,138 @@ export default function ListingsPage() {
           tableLayout={{ cellBorder: true }}
         >
           <Card>
-            <CardHeader className="py-3.5">
+            <CardHeader className="py-3.5 flex-wrap gap-3">
               <CardTitle>All listings</CardTitle>
-              <CardToolbar className="relative">
-                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                <Input
-                  placeholder="Search listings..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="ps-9 w-56"
-                />
-                {searchQuery.length > 0 && (
+              <CardToolbar className="flex items-center gap-2 flex-wrap">
+                <div className="flex gap-1.5">
                   <Button
-                    mode="icon"
-                    variant="ghost"
-                    className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                    onClick={() => setSearchQuery('')}
+                    size="sm"
+                    variant={groupMode === 'flat' ? 'primary' : 'outline'}
+                    onClick={() => setGroupMode('flat')}
                   >
-                    <X />
+                    Flat
                   </Button>
-                )}
+                  <Button
+                    size="sm"
+                    variant={groupMode === 'byProperty' ? 'primary' : 'outline'}
+                    onClick={() => setGroupMode('byProperty')}
+                  >
+                    By property
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={groupMode === 'byBuilding' ? 'primary' : 'outline'}
+                    onClick={() => setGroupMode('byBuilding')}
+                  >
+                    By building
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    placeholder="Search listings..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="ps-9 w-56"
+                  />
+                  {searchQuery.length > 0 && (
+                    <Button
+                      mode="icon"
+                      variant="ghost"
+                      className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <X />
+                    </Button>
+                  )}
+                </div>
               </CardToolbar>
             </CardHeader>
-            <CardTable>
-              <ScrollArea>
-                <DataGridTable />
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            </CardTable>
-            <CardFooter>
-              <DataGridPagination />
-            </CardFooter>
+            {groupMode === 'flat' && (
+              <>
+                <CardTable>
+                  <ScrollArea>
+                    <DataGridTable />
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
+                </CardTable>
+                <CardFooter>
+                  <DataGridPagination />
+                </CardFooter>
+              </>
+            )}
+            {groupMode === 'byProperty' && (
+              <CardContent className="flex flex-col gap-5 p-5">
+                {groupedByProperty.map((g) => (
+                  <GroupSection
+                    key={g.propertyId}
+                    title={g.property}
+                    href={`/properties/${g.propertyId}`}
+                    rows={g.rows}
+                  />
+                ))}
+              </CardContent>
+            )}
+            {groupMode === 'byBuilding' && (
+              <CardContent className="flex flex-col gap-5 p-5">
+                {groupedByBuilding.map((g) => (
+                  <GroupSection
+                    key={g.name}
+                    title={g.name}
+                    href={g.buildingId ? `/buildings/${g.buildingId}` : null}
+                    rows={g.rows}
+                  />
+                ))}
+              </CardContent>
+            )}
           </Card>
         </DataGrid>
       </Container>
     </Fragment>
+  );
+}
+
+function GroupSection({
+  title,
+  href,
+  rows,
+}: {
+  title: string;
+  href: string | null;
+  rows: EnrichedListing[];
+}) {
+  const totalUnits = rows.reduce((s, r) => s + r.quantity, 0);
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between border-b border-border pb-2">
+        {href ? (
+          <Link href={href} className="text-sm font-semibold text-mono hover:text-primary">
+            {title}
+          </Link>
+        ) : (
+          <span className="text-sm font-semibold text-mono">{title}</span>
+        )}
+        <span className="text-xs text-muted-foreground">
+          {rows.length} listings · {totalUnits} units
+        </span>
+      </div>
+      <div className="flex flex-col gap-1">
+        {rows.map((r) => (
+          <Link
+            key={r.id}
+            href={`/properties/${r.propertyId}/listings/${r.id}`}
+            className="flex items-center justify-between text-sm hover:bg-accent rounded-md px-2 py-1.5"
+          >
+            <span className="text-foreground">
+              {r.name}
+              <span className="text-xs text-muted-foreground ms-2">
+                × {r.quantity}
+              </span>
+            </span>
+            <span className="font-medium">RM {r.dailyRate}</span>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }

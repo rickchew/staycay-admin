@@ -127,6 +127,67 @@ Every authenticated request from a merchant role must be scoped to that merchant
 
 ---
 
+## Guest Rules
+
+### BR-G01 — Per-Merchant Scoping
+- `Guest` rows are scoped by `merchantId`. The same email at two different merchants produces two independent records.
+- Merchants cannot read or modify guests belonging to other merchants. SUPER_ADMIN has read-only cross-merchant access.
+
+### BR-G02 — Implicit Creation
+- Guests are never created directly via a `POST /guests` endpoint.
+- On `POST /bookings`, the bookings service calls `guests.findOrCreate({ merchantId, email, phone, name })`:
+  - If `email` provided → upsert by `(merchantId, email)`
+  - Else if `phone` provided → upsert by `(merchantId, phone)`
+  - Else → insert anonymous row (`name` only)
+- The resulting `guestId` is written to `Booking.guestId`. `guestName`, `guestEmail`, `guestPhone` are also snapshotted onto the booking for historical accuracy.
+
+### BR-G03 — Denormalized Counters
+- `Guest.totalBookings`, `Guest.totalSpent`, `Guest.firstBookingAt`, `Guest.lastBookingAt` are maintained by listeners on `booking.confirmed`, `booking.cancelled`, `payment.received`, `payment.refunded`.
+- A nightly reconciliation job repairs any drift.
+
+### BR-G04 — Blacklist
+- Setting `Guest.isBlacklisted = true` blocks new bookings for that guest at that merchant.
+- `POST /bookings` returns `GUEST_BLACKLISTED` if the resolved guest is blacklisted.
+- Existing bookings made before the blacklist are unaffected.
+- `blacklistReason` is required when blacklisting and is shown in audit logs.
+
+### BR-G05 — VIP Flag
+- Purely informational. Surfaces a VIP badge on the booking detail page and guest list.
+- Does not modify pricing or any business logic at Stage 1.
+
+---
+
+## Channel Rules
+
+### BR-CH01 — Channel Registry
+- `Channel` rows are a global registry seeded by SUPER_ADMIN. Merchants cannot create or delete channels.
+- `DIRECT` is always present and is the system-wide default for bookings with no specified origin.
+
+### BR-CH02 — Booking Origin Tagging (MVP)
+- Every `Booking` must have a `channelId`. The default is `DIRECT`.
+- Staff can override the channel at booking-creation time (dropdown on the create form) to record where the reservation came from — e.g., a phone-in guest who originally found the property on Agoda.
+- `externalBookingRef` is captured when known (e.g., "agoda confirmation #12345"). Free-text in MVP.
+
+### BR-CH03 — Channel Mix Reporting (MVP)
+- Dashboard surfaces channel-mix stats: bookings count and revenue grouped by channel, last 30 days.
+- Tag accuracy depends on staff discipline; no automated reconciliation in MVP.
+
+### BR-CH04 — Channel Sync *(Stage 2 of product roadmap)*
+- `ChannelAccount` carries encrypted per-channel credentials, scoped per merchant.
+- A `Listing` can be syndicated to multiple channels via `ChannelListing` rows.
+- On `booking.confirmed` and `booking.cancelled`, availability for the affected unit is pushed to every active `ChannelListing`.
+- Inbound bookings from channels arrive via webhook → create `Booking` with `channelId` set + `externalBookingRef` populated → guest find-or-create runs as for direct bookings.
+
+### BR-CH05 — Channel Rate Adjustment *(Stage 2 of product roadmap)*
+- `ChannelListing.rateAdjustmentPct` is applied multiplicatively over `Listing.dailyRate` when pushing rates to the channel — `pushedRate = dailyRate × (1 + rateAdjustmentPct/100)`.
+- The snapshot rule (BR-004) still applies: when a booking lands, the `dailyRate` snapshotted on the booking is the pre-adjustment internal rate.
+
+### BR-CH06 — Channel-Booking Cancellation *(Stage 2 of product roadmap)*
+- Cancellation of a channel-originated booking must call the channel's API to acknowledge the cancellation; otherwise the channel may still treat the room as sold.
+- Failures are queued for retry with exponential backoff and surfaced in the channel-sync status panel.
+
+---
+
 ## Loyalty Rules (Stage 2)
 
 ### BR-401 — Earning

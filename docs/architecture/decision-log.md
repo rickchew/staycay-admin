@@ -292,6 +292,179 @@ Deploy `apps/portal` to Cloudflare Workers via the OpenNext adapter (`@opennextj
 
 ---
 
+## DL-014 — Building Entity Above Property (Option A)
+**Date:** 2026-05-15
+**Status:** Accepted
+
+### Context
+A single physical building can host multiple merchants (e.g. Stirling Suite Miri has three independent operators on different floors). The original `Property` model assumed a one-merchant-per-physical-place mapping, which lost the "same building" relationship and made cross-merchant operational views impossible (shared lobby info, joint occupancy summary, etc.).
+
+### Decision
+Introduce a `Building` entity above `Property`. `Building` represents the physical structure (address, postcode, GPS, shared photos, common-area info). `Property` becomes "a merchant's slice of that building" and keeps merchant-specific operational fields (check-in/out times, settings). One `Property` still belongs to one `Merchant` — the multi-tenancy invariant is preserved.
+
+### Rationale
+- Matches the OTA/hotel mental model where a building can carry multiple operators
+- Lets the SUPER_ADMIN see aggregate occupancy and owners-list for a building (Stirling case)
+- Shared metadata (common-area photos, parking, building WiFi, building notes) has a clean home instead of being denormalised across each merchant's Property
+- Property → Merchant remains 1:1, so audit logs, RBAC, soft-delete rules are untouched
+
+### Alternatives Rejected
+- **Option B — `Property.buildingId` tag only** (no Building entity). Cheaper today but no place for shared metadata; would require migration later when shared building info became needed.
+- **Option C — Multi-tenant Property** (Property owned by multiple merchants via a junction table). Breaks the single-merchant-ownership invariant relied on by every other module. Massive blast radius.
+
+### Implementation Notes
+- Properties on the same building share `buildingId`. UI aggregates via `getMerchantStats(merchantId)` for owners table and per-building occupancy.
+- Building creation policy is "SUPER_ADMIN onboards buildings; merchants link properties to existing Building records" (others can be added later if needed).
+- `/buildings` and `/buildings/[id]` portal routes (admin-only visibility in the sidebar).
+
+---
+
+## DL-015 — Guestbook as a First-Class Per-Merchant Entity
+**Date:** 2026-05-15
+**Status:** Accepted
+
+### Context
+Before this decision, guest info (name/email/phone) lived inline on each `Booking` row. There was no way to view a guest's stay history, mark a guest VIP or blacklisted, or feed a future loyalty programme. Guest data also crossed merchant boundaries when the same person stayed at two different operators.
+
+### Decision
+Introduce a `Guest` entity scoped by `merchantId`. Guests are not created directly — they are upserted by the bookings flow via find-or-create on `(merchantId, email)` (falling back to `(merchantId, phone)` for walk-ins). The same email at two different merchants produces two independent Guest rows.
+
+Per-merchant fields include VIP flag, blacklist flag + reason, identity (NRIC/Passport), nationality, and denormalised counters (`totalBookings`, `totalSpent`, `firstBookingAt`, `lastBookingAt`).
+
+### Rationale
+- Per-merchant scoping aligns with the rest of the tenancy model — no merchant can read another merchant's guest list
+- Find-or-create from bookings ensures the guestbook is always populated correctly without needing a separate "Add Guest" UI
+- Booking rows still snapshot `guestName/guestEmail/guestPhone` for historical accuracy (BR-G02) — the Guest profile reflects current contact info
+- Forms the foundation for the Stage 2 Loyalty module (per `LoyaltyAccount` per `Guest`)
+
+### Trade-offs Accepted
+- Denormalised counters need a reconciliation job to repair drift (nightly cron)
+- No global "is this guest blacklisted at any merchant" concept; each merchant maintains their own list
+
+### Implementation Notes
+- Endpoints under `/guests` are read + patch only — explicitly **no** `POST /guests`. Listed under Administration in the sidebar (visible to all roles).
+- Blacklist enforcement happens at booking creation: `POST /bookings` rejects with `GUEST_BLACKLISTED` if the resolved guest is blacklisted at this merchant (BR-G04).
+
+---
+
+## DL-016 — Channel Registry with MVP Origin Tagging
+**Date:** 2026-05-15
+**Status:** Accepted
+
+### Context
+Property operators frequently list their inventory on multiple OTAs (Agoda, Booking.com, Airbnb, Expedia). Full channel-manager sync (rate push, availability push, inbound booking webhooks) is a heavy, expensive integration that doesn't fit Stage 1 scope. But operators still need to know *which channel* each booking came from — for commission reporting, performance review, and reconciliation.
+
+### Decision
+Split channel support into two phases:
+- **MVP (Stage 6):** A global `Channel` registry seeded with `DIRECT`, `AGODA`, `BOOKING_COM`, `AIRBNB`, `EXPEDIA`, `OTHER`. Every `Booking` carries a `channelCode` (defaulting to `DIRECT`) and an optional `externalBookingRef` free-text field. Staff tags the channel at booking creation. Dashboard surfaces a channel-mix breakdown.
+- **Stage 2 of product roadmap:** `ChannelAccount` (encrypted per-merchant credentials, mirroring `PaymentGatewayConfig`), `ChannelListing` (per-listing mapping to the channel's external listing id with rate adjustment %), outbound availability/rate push, inbound webhooks, channel-aware cancellation propagation, and reconciliation jobs.
+
+### Rationale
+- The MVP is essentially zero-cost — adding two fields to `Booking` and a seeded enum-like table buys us channel reporting from day one
+- Full sync is deferred because each OTA has its own API, signature scheme, and quirks; building all four at once would block Stage 1
+- The Stage 2 architecture reuses the `PaymentGatewayConfig`/encryption pattern, so when we activate it there's no fresh design work
+
+### Implementation Notes
+- `DIRECT` is always present and always available — used for walk-ins, phone bookings, and own-website reservations
+- Channel chip + icon UI uses Booking.com and Airbnb SVGs already shipped in Metronic's brand-logos folder; other channels render a colour-coded initial badge (e.g. red "A" for Agoda)
+- Bookings list, booking detail, calendar, and dashboard Channel Mix widget all consume the same `getChannel(code)` helper
+
+---
+
+## DL-017 — Sidebar Inventory Consolidation (Listings as Primary)
+**Date:** 2026-05-15
+**Status:** Accepted
+
+### Context
+The initial sidebar exposed both "Properties" and "Listings" as parallel top-level inventory destinations. In practice every operational concern (bookings, payments, cleaning) terminates at a listing/unit, not at a property. Operators reported confusion: "do I add the new room under Properties or Listings?".
+
+### Decision
+Drop `/properties` from the sidebar. `Listings` becomes the single inventory entry point, with grouping toggles `Flat / By property / By building` so the operator can pivot the same data without switching menus. Property pages remain reachable via drill-through links (clicking a property name in a listing row or a building's owners table). Building gets its own admin-only sidebar entry under Inventory.
+
+### Rationale
+- Listings are the operational unit — bookings, availability, pricing, channel-mappings all live there
+- Properties and Buildings are organisational layers users browse *into*, not parallel concepts to choose between
+- A grouping toggle on `/listings` exposes the spatial hierarchy without forcing a separate top-level destination
+
+### Trade-offs Accepted
+- Operators have to learn the "click into a listing to see the property" flow
+- The bare `/properties` URL still exists as a reachable route, just not in the sidebar — accepted for now, can be revisited
+
+---
+
+## DL-018 — Role-Aware Sidebar + Route Guards (Single Allow-List)
+**Date:** 2026-05-15
+**Status:** Accepted
+
+### Context
+Three Staycay roles (`SUPER_ADMIN`, `PROPERTY_OWNER`, `STAFF`) need different navigation surfaces. Earlier we only filtered the sidebar visually — direct URL access (typing `/admin/users` while logged in as STAFF) still worked because no route guard ran.
+
+### Decision
+Centralise the role-to-path allow-list in `apps/portal/lib/mock/route-access.ts`. Both the sidebar filter and a client-side `RoleRouteGuard` consume the same predicate `isPathAllowedForRole(path, role)`. The guard wraps the protected layout's children and redirects to `/` if the current role can't reach the path. Section headings whose items are all filtered out are dropped from the sidebar (no orphan "ADMINISTRATION" header).
+
+Allow-list rules:
+- `SUPER_ADMIN` — everything
+- `PROPERTY_OWNER` — everything except `/admin/*` and `/buildings`
+- `STAFF` — everything except `/admin/*`, `/buildings`, and `/settings/*`
+
+### Rationale
+- One source of truth — adding a new admin-only route is a single-line change in `route-access.ts`
+- The portal still mocks the API, so the guard is a client-side UX layer; real enforcement will live in the NestJS `RolesGuard` (Stage 2 of dev plan) using the same predicate semantics
+- Empty-section heading suppression avoids the "ADMINISTRATION (nothing visible)" anti-pattern
+
+---
+
+## DL-019 — Calendar Feature as Operational Anchor
+**Date:** 2026-05-15
+**Status:** Accepted
+
+### Context
+The bookings list answers "what's on the books" but not "is this unit free on these dates" at a glance. PMS/OTA users expect a 2D occupancy grid (units × dates) as the daily operational view.
+
+### Decision
+Add a `/calendar` route directly below Dashboard in the sidebar. The page renders a 14-day occupancy grid where each row is a `ListingUnit` and each column is a date. Status-coloured pills span `checkIn → checkOut`. The toolbar carries property and channel filters, week pagination, and an occupancy ratio badge (occupied unit-nights ÷ total).
+
+### Rationale
+- This is the screen operators glance at first every morning — putting it second in the sidebar mirrors that
+- Reuses the existing `Booking.unitId` linkage; no new schema is needed
+- Filters reuse the channel registry (DL-016) and the existing property list
+
+### Implementation Notes
+- Date math via `date-fns` (already a Metronic dependency)
+- Clicking a booking pill drills to `/bookings/[id]`
+- Today's column gets a primary-coloured ring; weekend columns get a subtle background
+- A property-aware filter narrows the rows; a channel filter narrows the rendered bookings (and recomputes occupancy stats)
+
+---
+
+## DL-020 — Mock-Only Frontend Stage Before Backend
+**Date:** 2026-05-15
+**Status:** Accepted
+
+### Context
+The dev plan sequences API (Stage 1–2) before portal (Stage 3+). In practice, building all portal screens against `lib/mock` (Faker-seeded data, no network) lets us validate the full UX picture before committing API endpoint shapes.
+
+### Decision
+The current `apps/portal` is a **mock-only build**. All entities (Merchants, Users, Guests, Properties, Listings, Bookings, Payments, Cleaning logs, Notifications, Buildings, Channels) live as Faker-generated TypeScript arrays in `apps/portal/lib/mock/`. Pages import the arrays directly — no `fetch`, no API client, no Prisma. The role switcher persists to `localStorage` (`staycay.role` key). Create/edit buttons are deliberately no-ops (forms not wired).
+
+When the NestJS API lands (dev plan Stages 1 + 2), the migration path is:
+1. Replace each `MOCK_*` import with a typed API client call (`apiFetch('/api/v1/...')`)
+2. Move stateful data (cleaning column moves, role switcher) behind a real backend
+3. Wire create/edit forms to the corresponding endpoints
+
+The page shapes, route hierarchy, role rules, and component composition do not change — that's the whole point of doing UI first.
+
+### Rationale
+- The dashboard, calendar, channel mix, multi-owner building view, guest-blacklist warning banner — none of these are obvious from looking at the data model. Building them against mocks surfaced real layout and information-density decisions
+- Architecture docs (data-models.md, business-rules.md, api-contracts.md) were extended *because* the UI work asked questions the docs hadn't answered
+- The next agent picking this up has a complete UX to work back from
+
+### Trade-offs Accepted
+- Forms (Add booking, Add gateway, Edit merchant, etc.) are visible CTAs that don't do anything yet — documented in this entry rather than hidden, so the gap is explicit
+- Cleaning column moves and role switcher state are client-only and don't persist across browser sessions
+
+---
+
 ## Template for New Entries
 
 ```

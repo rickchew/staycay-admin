@@ -171,20 +171,32 @@ export default function BookingsPage() {
         cell: ({ row }) => {
           const channel = getChannel(row.original.channelCode);
           return (
-            <div className="flex flex-col gap-0.5">
-              <span className="inline-flex items-center gap-1.5 text-sm">
-                <span className={`h-2 w-2 rounded-full ${channel.color}`} />
-                {channel.name}
-              </span>
-              {row.original.externalBookingRef && (
-                <span className="text-xs text-muted-foreground font-mono">
-                  {row.original.externalBookingRef}
+            <div className="flex items-center gap-2">
+              {channel.iconUrl ? (
+                <img
+                  src={channel.iconUrl}
+                  alt={channel.name}
+                  className="size-5 shrink-0"
+                />
+              ) : (
+                <span
+                  className={`inline-flex size-5 shrink-0 items-center justify-center rounded-full ${channel.color} text-[10px] font-semibold text-white`}
+                >
+                  {channel.initial}
                 </span>
               )}
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm">{channel.name}</span>
+                {row.original.externalBookingRef && (
+                  <span className="text-xs text-muted-foreground font-mono">
+                    {row.original.externalBookingRef}
+                  </span>
+                )}
+              </div>
             </div>
           );
         },
-        size: 160,
+        size: 180,
       },
       {
         id: 'payment',
@@ -281,7 +293,15 @@ export default function BookingsPage() {
                       variant={channelFilter === c.code ? 'primary' : 'outline'}
                       onClick={() => setChannelFilter(c.code)}
                     >
-                      <span className={`h-2 w-2 rounded-full ${c.color}`} />
+                      {c.iconUrl ? (
+                        <img src={c.iconUrl} alt="" className="size-4" />
+                      ) : (
+                        <span
+                          className={`inline-flex size-4 items-center justify-center rounded-full ${c.color} text-[9px] font-semibold text-white`}
+                        >
+                          {c.initial}
+                        </span>
+                      )}
                       {c.name}
                     </Button>
                   ))}

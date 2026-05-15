@@ -165,8 +165,20 @@ export default function BookingDetailPage({
             <Card>
               <CardHeader>
                 <CardTitle>Stay details</CardTitle>
-                <span className="inline-flex items-center gap-1.5 text-sm">
-                  <span className={`h-2 w-2 rounded-full ${channel.color}`} />
+                <span className="inline-flex items-center gap-2 text-sm">
+                  {channel.iconUrl ? (
+                    <img
+                      src={channel.iconUrl}
+                      alt={channel.name}
+                      className="size-5"
+                    />
+                  ) : (
+                    <span
+                      className={`inline-flex size-5 items-center justify-center rounded-full ${channel.color} text-[10px] font-semibold text-white`}
+                    >
+                      {channel.initial}
+                    </span>
+                  )}
                   {channel.name}
                   {booking.externalBookingRef && (
                     <span className="text-xs text-muted-foreground font-mono">
@@ -397,8 +409,20 @@ export default function BookingDetailPage({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Channel</span>
-                  <span className="inline-flex items-center gap-1.5 font-medium">
-                    <span className={`h-2 w-2 rounded-full ${channel.color}`} />
+                  <span className="inline-flex items-center gap-2 font-medium">
+                    {channel.iconUrl ? (
+                      <img
+                        src={channel.iconUrl}
+                        alt={channel.name}
+                        className="size-4"
+                      />
+                    ) : (
+                      <span
+                        className={`inline-flex size-4 items-center justify-center rounded-full ${channel.color} text-[9px] font-semibold text-white`}
+                      >
+                        {channel.initial}
+                      </span>
+                    )}
                     {channel.name}
                   </span>
                 </div>

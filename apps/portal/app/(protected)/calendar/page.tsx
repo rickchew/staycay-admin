@@ -23,9 +23,11 @@ import {
 } from '@/components/ui/select';
 import {
   MOCK_BOOKINGS,
+  MOCK_CHANNELS,
   MOCK_LISTINGS,
   MOCK_PROPERTIES,
   type Booking,
+  type ChannelCode,
   type ListingUnit,
 } from '@/lib/mock';
 
@@ -50,6 +52,7 @@ type UnitRow = {
 export default function CalendarPage() {
   const [anchor, setAnchor] = useState<Date>(() => startOfDay(new Date()));
   const [propertyFilter, setPropertyFilter] = useState<string>('all');
+  const [channelFilter, setChannelFilter] = useState<ChannelCode | 'all'>('all');
 
   // Build the day range
   const days = useMemo(
@@ -72,15 +75,24 @@ export default function CalendarPage() {
     );
   }, [propertyFilter]);
 
+  // Bookings filtered by channel (property filter is applied via the row set)
+  const filteredBookings = useMemo(
+    () =>
+      channelFilter === 'all'
+        ? MOCK_BOOKINGS
+        : MOCK_BOOKINGS.filter((b) => b.channelCode === channelFilter),
+    [channelFilter],
+  );
+
   // Index bookings by unitId for fast lookup
   const bookingsByUnit = useMemo(() => {
     const map = new Map<string, Booking[]>();
-    for (const b of MOCK_BOOKINGS) {
+    for (const b of filteredBookings) {
       if (!map.has(b.unitId)) map.set(b.unitId, []);
       map.get(b.unitId)!.push(b);
     }
     return map;
-  }, []);
+  }, [filteredBookings]);
 
   const visibleProperties = MOCK_PROPERTIES.slice().sort((a, b) =>
     a.name.localeCompare(b.name),
@@ -90,7 +102,7 @@ export default function CalendarPage() {
 
   // Stats for the visible window
   const visibleUnitIds = new Set(rows.map((r) => r.unit.id));
-  const visibleBookings = MOCK_BOOKINGS.filter(
+  const visibleBookings = filteredBookings.filter(
     (b) =>
       visibleUnitIds.has(b.unitId) &&
       b.checkIn <= format(days[days.length - 1], 'yyyy-MM-dd') &&
@@ -159,6 +171,25 @@ export default function CalendarPage() {
                 {visibleProperties.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={channelFilter}
+              onValueChange={(v) => setChannelFilter(v as ChannelCode | 'all')}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Filter by channel" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All channels</SelectItem>
+                {MOCK_CHANNELS.map((c) => (
+                  <SelectItem key={c.code} value={c.code}>
+                    <span className="inline-flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full ${c.color}`} />
+                      {c.name}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>

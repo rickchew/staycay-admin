@@ -52,7 +52,7 @@ export const MOCK_GUESTS: Guest[] = MOCK_MERCHANTS.flatMap((merchant) =>
       notes: faker.datatype.boolean({ probability: 0.25 }) ? faker.lorem.sentence() : null,
       vip: faker.datatype.boolean({ probability: 0.12 }),
       isBlacklisted: faker.datatype.boolean({ probability: 0.04 }),
-      blacklistReason: null,
+      blacklistReason: null as string | null,
       firstBookingAt,
       lastBookingAt,
       totalBookings,

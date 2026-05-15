@@ -10,7 +10,10 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "verify:preview-paths": "node scripts/verify-preview-paths.mjs",
-    "verify:all-demos": "node ../../scripts/verify-all-demos.mjs"
+    "verify:all-demos": "node ../../scripts/verify-all-demos.mjs",
+    "build:cf": "opennextjs-cloudflare build",
+    "preview:cf": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy:cf": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "prisma": {
     "seed": "node prisma/seed.js",
@@ -72,6 +75,7 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.19.10",
     "@prisma/client": "^6.19.0",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/bcrypt": "^5.0.2",
@@ -92,7 +96,8 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "prisma": "^6.19.2",
     "tailwindcss": "^4.1.17",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "wrangler": "^4.92.0"
   },
   "overrides": {
     "minimatch": "^10.2.1",

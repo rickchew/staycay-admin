@@ -7,6 +7,7 @@ import { ScreenLoader } from '@/components/common/screen-loader';
 import { DemoLayoutById } from '@/app/components/layouts/demo-layout-registry';
 import type { DemoId } from '@/lib/demo-id';
 import { callbackPathForDemoRoute } from '@/lib/post-auth-redirect';
+import { RoleRouteGuard } from './role-route-guard';
 
 export function ProtectedLayoutClient({
   demo,
@@ -36,6 +37,8 @@ export function ProtectedLayoutClient({
   }
 
   return session ? (
-    <DemoLayoutById demo={demo}>{children}</DemoLayoutById>
+    <DemoLayoutById demo={demo}>
+      <RoleRouteGuard>{children}</RoleRouteGuard>
+    </DemoLayoutById>
   ) : null;
 }

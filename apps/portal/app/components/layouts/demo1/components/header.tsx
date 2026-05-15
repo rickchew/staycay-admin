@@ -4,18 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SearchDialog } from '@/partials/dialogs/search/search-dialog';
-import { AppsDropdownMenu } from '@/partials/topbar/apps-dropdown-menu';
-import { ChatSheet } from '@/partials/topbar/chat-sheet';
-import { NotificationsSheet } from '@/partials/topbar/notifications-sheet';
 import { UserDropdownMenu } from '@/partials/topbar/user-dropdown-menu';
-import {
-  Bell,
-  LayoutGrid,
-  Menu,
-  MessageCircleMore,
-  Search,
-  SquareChevronRight,
-} from 'lucide-react';
+import { UNREAD_NOTIFICATION_COUNT } from '@/lib/mock';
+import { Bell, Menu, Search, SquareChevronRight } from 'lucide-react';
 import { toAbsoluteUrl } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -64,8 +55,8 @@ export function Header() {
           <Link href="/" className="shrink-0">
             <img
               src={toAbsoluteUrl('/media/app/mini-logo.svg')}
-              className="h-[25px] w-full"
-              alt="mini-logo"
+              className="h-[25px] w-full dark:hidden"
+              alt="Staycay"
             />
           </Link>
           <div className="flex items-center">
@@ -144,18 +135,22 @@ export function Header() {
                   }
                 />
               )}
-              <NotificationsSheet
-                trigger={
-                  <Button
-                    variant="ghost"
-                    mode="icon"
-                    shape="circle"
-                    className="size-9 hover:bg-primary/10 hover:[&_svg]:text-primary"
-                  >
-                    <Bell className="size-4.5!" />
-                  </Button>
-                }
-              />
+              <Button
+                variant="ghost"
+                mode="icon"
+                shape="circle"
+                className="size-9 relative hover:bg-primary/10 hover:[&_svg]:text-primary"
+                asChild
+              >
+                <Link href="/notifications" aria-label="Notifications">
+                  <Bell className="size-4.5!" />
+                  {UNREAD_NOTIFICATION_COUNT > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-white">
+                      {UNREAD_NOTIFICATION_COUNT}
+                    </span>
+                  )}
+                </Link>
+              </Button>
               <UserDropdownMenu
                 trigger={
                   <img

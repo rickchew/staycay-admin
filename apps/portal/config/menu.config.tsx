@@ -9,6 +9,7 @@ import {
   Briefcase,
   Building,
   CalendarCheck,
+  CalendarDays,
   Captions,
   CheckCircle,
   Code,
@@ -59,6 +60,11 @@ export const MENU_SIDEBAR: MenuConfig = [
     title: 'Dashboard',
     icon: LayoutGrid,
     path: '/',
+  },
+  {
+    title: 'Calendar',
+    icon: CalendarDays,
+    path: '/calendar',
   },
   { heading: 'Operations' },
   {

@@ -39,9 +39,9 @@ export function SidebarHeader() {
             alt="Staycay"
           />
           <img
-            src={toAbsoluteUrl('/media/app/mini-logo.svg')}
+            src={toAbsoluteUrl('/media/app/mini-logo-dark.svg')}
             className="small-logo h-[22px] max-w-none"
-            alt="Mini Logo"
+            alt="Staycay"
           />
         </div>
       </Link>

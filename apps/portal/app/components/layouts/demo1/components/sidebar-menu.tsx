@@ -5,25 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MENU_SIDEBAR } from '@/config/menu.config';
 import { MenuConfig, MenuItem } from '@/config/types';
-import { useStaycayRole, type StaycayRole } from '@/lib/mock';
+import { isPathAllowedForRole, useStaycayRole, type StaycayRole } from '@/lib/mock';
 import { cn } from '@/lib/utils';
-
-// Routes only Super Admin can reach
-const SUPER_ADMIN_ONLY_PREFIXES = ['/admin', '/buildings'];
-// Routes the merchant owner can reach (in addition to all staff routes)
-const OWNER_AND_ADMIN_PREFIXES = ['/settings'];
-
-function isPathAllowed(path: string | undefined, role: StaycayRole): boolean {
-  if (!path) return true;
-  if (role === 'SUPER_ADMIN') return true;
-  if (SUPER_ADMIN_ONLY_PREFIXES.some((p) => path === p || path.startsWith(p + '/'))) {
-    return false;
-  }
-  if (role === 'STAFF' && OWNER_AND_ADMIN_PREFIXES.some((p) => path === p || path.startsWith(p + '/'))) {
-    return false;
-  }
-  return true;
-}
 
 function filterByRole(menu: MenuConfig, role: StaycayRole): MenuConfig {
   const result: MenuConfig = [];
@@ -39,7 +22,7 @@ function filterByRole(menu: MenuConfig, role: StaycayRole): MenuConfig {
       sectionHasItems = false;
       continue;
     }
-    if (!isPathAllowed(item.path, role)) continue;
+    if (item.path && !isPathAllowedForRole(item.path, role)) continue;
     if (pendingHeading && !sectionHasItems) {
       result.push(pendingHeading);
       sectionHasItems = true;

@@ -1,4 +1,5 @@
 export * from './roles';
+export * from './route-access';
 export * from './use-staycay-role';
 export * from './buildings';
 export * from './channels';

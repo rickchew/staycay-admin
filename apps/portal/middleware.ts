@@ -2,54 +2,23 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { DEMO_SEGMENT_RE } from '@/lib/demo-id';
 
-const AUTH_PATH =
-  /^\/(signin|signup|reset-password|verify-email|change-password)(\/|$)/;
-
-/** Path already starts with /demo1 … /demo10 */
-const HAS_DEMO_PREFIX = /^\/(demo(?:10|[1-9]))(\/|$)/;
-
+/**
+ * Staycay uses unprefixed routes. The Metronic template shipped a
+ * middleware that wrapped every URL in `/demoN/...` for its multi-demo
+ * preview scheme — we don't use that, so this middleware only handles
+ * one thing: rewriting any leftover `/demoN/...` request back to its
+ * unprefixed equivalent so old bookmarks and post-auth callbacks don't
+ * land on 404s.
+ */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  if (pathname === '/' || pathname === '') {
-    const url = request.nextUrl.clone();
-    url.pathname = '/demo1/';
-    return NextResponse.redirect(url);
-  }
-
-  if (AUTH_PATH.test(pathname)) {
-    return NextResponse.next();
-  }
-
   const demoMatch = pathname.match(DEMO_SEGMENT_RE);
   if (demoMatch) {
-    const demo = demoMatch[1];
     const rest = demoMatch[2] ?? '/';
-    const innerPath = rest === '' ? '/' : rest;
-
     const url = request.nextUrl.clone();
-    url.pathname = innerPath;
-
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-metronic-demo', demo);
-
-    return NextResponse.rewrite(url, {
-      request: { headers: requestHeaders },
-    });
-  }
-
-  if (pathname.startsWith('/demo')) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/demo1/';
+    url.pathname = rest === '' ? '/' : rest;
     return NextResponse.redirect(url);
   }
-
-  if (!HAS_DEMO_PREFIX.test(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/demo1${pathname}`;
-    return NextResponse.redirect(url);
-  }
-
   return NextResponse.next();
 }
 

@@ -73,11 +73,6 @@ export const MENU_SIDEBAR: MenuConfig = [
     path: '/bookings',
   },
   {
-    title: 'Guests',
-    icon: UserCheck,
-    path: '/guests',
-  },
-  {
     title: 'Cleaning',
     icon: Kanban,
     path: '/cleaning',
@@ -103,6 +98,11 @@ export const MENU_SIDEBAR: MenuConfig = [
     title: 'Merchants',
     icon: Briefcase,
     path: '/admin/merchants',
+  },
+  {
+    title: 'Guests',
+    icon: UserCheck,
+    path: '/guests',
   },
   {
     title: 'Users',

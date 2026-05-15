@@ -28,11 +28,11 @@
 ## Endpoints
 
 ```
-GET    /api/v1/properties                   MERCHANT_OWNER, MERCHANT_STAFF
-POST   /api/v1/properties                   MERCHANT_OWNER
-GET    /api/v1/properties/:id               MERCHANT_OWNER, MERCHANT_STAFF
-PATCH  /api/v1/properties/:id               MERCHANT_OWNER
-DELETE /api/v1/properties/:id               MERCHANT_OWNER — soft delete
+GET    /api/v1/properties                   PROPERTY_OWNER, STAFF
+POST   /api/v1/properties                   PROPERTY_OWNER
+GET    /api/v1/properties/:id               PROPERTY_OWNER, STAFF
+PATCH  /api/v1/properties/:id               PROPERTY_OWNER
+DELETE /api/v1/properties/:id               PROPERTY_OWNER — soft delete
 ```
 
 ---

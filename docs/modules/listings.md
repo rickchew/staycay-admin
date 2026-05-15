@@ -32,20 +32,20 @@ See DL-002 in `decision-log.md` for the Listing vs ListingUnit split rationale.
 ### Listings
 
 ```
-GET    /api/v1/properties/:propertyId/listings     MERCHANT_OWNER, MERCHANT_STAFF
-POST   /api/v1/properties/:propertyId/listings     MERCHANT_OWNER
-GET    /api/v1/listings/:id                        MERCHANT_OWNER, MERCHANT_STAFF
-PATCH  /api/v1/listings/:id                        MERCHANT_OWNER
-DELETE /api/v1/listings/:id                        MERCHANT_OWNER — soft delete
+GET    /api/v1/properties/:propertyId/listings     PROPERTY_OWNER, STAFF
+POST   /api/v1/properties/:propertyId/listings     PROPERTY_OWNER
+GET    /api/v1/listings/:id                        PROPERTY_OWNER, STAFF
+PATCH  /api/v1/listings/:id                        PROPERTY_OWNER
+DELETE /api/v1/listings/:id                        PROPERTY_OWNER — soft delete
 ```
 
 ### ListingUnits
 
 ```
-GET    /api/v1/listings/:id/units                  MERCHANT_OWNER, MERCHANT_STAFF
-POST   /api/v1/listings/:id/units                  MERCHANT_OWNER
-PATCH  /api/v1/listing-units/:id                   MERCHANT_OWNER
-DELETE /api/v1/listing-units/:id                   MERCHANT_OWNER — soft delete
+GET    /api/v1/listings/:id/units                  PROPERTY_OWNER, STAFF
+POST   /api/v1/listings/:id/units                  PROPERTY_OWNER
+PATCH  /api/v1/listing-units/:id                   PROPERTY_OWNER
+DELETE /api/v1/listing-units/:id                   PROPERTY_OWNER — soft delete
 ```
 
 ---

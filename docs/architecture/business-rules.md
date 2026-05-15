@@ -64,7 +64,7 @@ A booking transitions from `PENDING` to `CONFIRMED` when:
 
 ### BR-103 — Manual Payments
 Merchant staff can record manual payments (cash, bank transfer):
-- Requires `MERCHANT_OWNER` or `MERCHANT_STAFF` role
+- Requires `PROPERTY_OWNER` or `STAFF` role
 - Audit log entry mandatory
 - No webhook flow
 
@@ -119,7 +119,7 @@ Every authenticated request from a merchant role must be scoped to that merchant
 ### BR-302 — Cross-Merchant Access
 - `SUPER_ADMIN` can read all merchants
 - `SUPER_ADMIN` mutations on merchant data must be logged with explicit reason
-- `MERCHANT_OWNER` cannot access another merchant's data, even with their ID
+- `PROPERTY_OWNER` cannot access another merchant's data, even with their ID
 
 ### BR-303 — Customer Scoping
 - Customers see only their own bookings

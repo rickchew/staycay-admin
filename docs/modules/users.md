@@ -37,10 +37,10 @@ GET    /api/v1/users/:id                    SUPER_ADMIN
 PATCH  /api/v1/users/:id                    SUPER_ADMIN
 DELETE /api/v1/users/:id                    SUPER_ADMIN — soft delete
 
-GET    /api/v1/merchants/me/staff           MERCHANT_OWNER — list merchant staff
-POST   /api/v1/merchants/me/staff           MERCHANT_OWNER — create staff user
-PATCH  /api/v1/merchants/me/staff/:id       MERCHANT_OWNER — update staff
-DELETE /api/v1/merchants/me/staff/:id       MERCHANT_OWNER — soft delete staff
+GET    /api/v1/merchants/me/staff           PROPERTY_OWNER — list merchant staff
+POST   /api/v1/merchants/me/staff           PROPERTY_OWNER — create staff user
+PATCH  /api/v1/merchants/me/staff/:id       PROPERTY_OWNER — update staff
+DELETE /api/v1/merchants/me/staff/:id       PROPERTY_OWNER — soft delete staff
 
 PATCH  /api/v1/users/me/password            Authenticated — change own password
 ```
@@ -51,13 +51,13 @@ PATCH  /api/v1/users/me/password            Authenticated — change own passwor
 
 - `email` must be globally unique across all users.
 - `phone` must be globally unique if provided.
-- Only `SUPER_ADMIN` can create `MERCHANT_OWNER` users.
-- `MERCHANT_OWNER` can create `MERCHANT_STAFF` users within their merchant.
+- Only `SUPER_ADMIN` can create `PROPERTY_OWNER` users.
+- `PROPERTY_OWNER` can create `STAFF` users within their merchant.
 - When creating a merchant-scoped user, a `MerchantMember` record is also created.
 - Users cannot delete their own account.
 - Users cannot change their own role.
 - Password minimum: 8 characters. Hashed with bcrypt.
-- A user cannot be soft-deleted if they are the last `MERCHANT_OWNER` in a merchant.
+- A user cannot be soft-deleted if they are the last `PROPERTY_OWNER` in a merchant.
 - `passwordHash` must never be returned in any API response.
 
 ---

@@ -48,7 +48,7 @@ GET    /api/v1/auth/me             Authenticated
 ```typescript
 interface JwtPayload {
   sub: string;       // userId
-  role: 'SUPER_ADMIN' | 'MERCHANT_OWNER' | 'MERCHANT_STAFF' | 'CUSTOMER';
+  role: 'SUPER_ADMIN' | 'PROPERTY_OWNER' | 'STAFF' | 'CUSTOMER';
   iat: number;
   exp: number;
 }

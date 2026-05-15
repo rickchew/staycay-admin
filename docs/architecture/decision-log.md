@@ -77,7 +77,7 @@ Slight denormalization. Acceptable because pricing history matters more than DRY
 **Status:** Accepted
 
 ### Context
-Platform has 4 user types: SUPER_ADMIN, MERCHANT_OWNER, MERCHANT_STAFF, CUSTOMER.
+Platform has 4 user types: SUPER_ADMIN, PROPERTY_OWNER, STAFF, CUSTOMER.
 
 ### Decision
 One `users` table with a `role` enum field. Use `MerchantMember` join table for merchant-scoped users.

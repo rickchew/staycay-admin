@@ -228,7 +228,7 @@ Use `@Roles()` decorator at the controller method level:
 
 ```typescript
 @Get()
-@Roles(UserRole.MERCHANT_OWNER, UserRole.MERCHANT_STAFF)
+@Roles(UserRole.PROPERTY_OWNER, UserRole.STAFF)
 @UseGuards(JwtAuthGuard, RolesGuard)
 async getProperties(@CurrentUser() user: User) {
   return this.propertiesService.findByMerchant(user.merchantId);

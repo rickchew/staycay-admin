@@ -34,13 +34,13 @@ GET    /api/v1/merchants/:id                SUPER_ADMIN
 PATCH  /api/v1/merchants/:id                SUPER_ADMIN
 DELETE /api/v1/merchants/:id                SUPER_ADMIN — soft delete
 
-GET    /api/v1/merchants/me                 MERCHANT_OWNER — own merchant
-PATCH  /api/v1/merchants/me                 MERCHANT_OWNER — update own
-PATCH  /api/v1/merchants/me/settings        MERCHANT_OWNER — update settings
+GET    /api/v1/merchants/me                 PROPERTY_OWNER — own merchant
+PATCH  /api/v1/merchants/me                 PROPERTY_OWNER — update own
+PATCH  /api/v1/merchants/me/settings        PROPERTY_OWNER — update settings
 
-GET    /api/v1/merchants/me/members         MERCHANT_OWNER — list members
-POST   /api/v1/merchants/me/members         MERCHANT_OWNER — add member
-DELETE /api/v1/merchants/me/members/:id     MERCHANT_OWNER — remove member
+GET    /api/v1/merchants/me/members         PROPERTY_OWNER — list members
+POST   /api/v1/merchants/me/members         PROPERTY_OWNER — add member
+DELETE /api/v1/merchants/me/members/:id     PROPERTY_OWNER — remove member
 ```
 
 ---
@@ -48,7 +48,7 @@ DELETE /api/v1/merchants/me/members/:id     MERCHANT_OWNER — remove member
 ## Business Rules
 
 - Only `SUPER_ADMIN` can create/list/delete merchants.
-- `MERCHANT_OWNER` can update their own merchant details and settings.
+- `PROPERTY_OWNER` can update their own merchant details and settings.
 - Soft-deleting a merchant sets `isActive: false`. All associated data remains but becomes inaccessible.
 - A merchant cannot be deactivated if it has active bookings (CONFIRMED or CHECKED_IN).
 - `businessRegNo` (SSM number) is optional but must be unique if provided.

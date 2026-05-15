@@ -15,11 +15,12 @@ A multi-tenant SaaS platform for property owners to manage room/unit bookings, c
 
 ## Required Reading Before Any Task
 
-1. `docs/architecture/system-overview.md` — Stack, structure, conventions
-2. `docs/architecture/data-models.md` — Entity relationships
-3. `docs/architecture/business-rules.md` — Cross-cutting business logic
-4. `docs/architecture/decision-log.md` — Why things are the way they are
-5. `docs/modules/{relevant-module}.md` — For the module you're touching
+1. `docs/development-plan.md` — 9-stage delivery plan, current scope, acceptance criteria
+2. `docs/architecture/system-overview.md` — Stack, structure, conventions
+3. `docs/architecture/data-models.md` — Entity relationships
+4. `docs/architecture/business-rules.md` — Cross-cutting business logic
+5. `docs/architecture/decision-log.md` — Why things are the way they are
+6. `docs/modules/{relevant-module}.md` — For the module you're touching
 
 ---
 

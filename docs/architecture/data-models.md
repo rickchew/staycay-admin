@@ -34,7 +34,7 @@ Single table for all user types. Role determines access.
 |---|---|
 | `email` | Unique, used for login |
 | `phone` | Unique, optional, for SMS notifications |
-| `role` | `SUPER_ADMIN` / `MERCHANT_OWNER` / `MERCHANT_STAFF` / `CUSTOMER` |
+| `role` | `SUPER_ADMIN` / `PROPERTY_OWNER` / `STAFF` / `CUSTOMER` |
 | `isActive` | Soft delete flag |
 | `passwordHash` | bcrypt hash, never return in API responses |
 

@@ -87,8 +87,8 @@ Merchant
 | Role | Description | Access Scope |
 |---|---|---|
 | `SUPER_ADMIN` | Platform owner | All merchants, all data |
-| `MERCHANT_OWNER` | Business owner | Own merchant + properties only |
-| `MERCHANT_STAFF` | Property staff | Assigned merchant only |
+| `PROPERTY_OWNER` | Business owner | Own merchant + properties only |
+| `STAFF` | Property staff | Assigned merchant only |
 | `CUSTOMER` | Public booking user | Own bookings only |
 
 Authorization is enforced via NestJS Guards using `@Roles()` decorators on controllers.

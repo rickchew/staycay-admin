@@ -55,18 +55,17 @@ export function SidebarMenu() {
     [pathname],
   );
 
-  // Global classNames for consistent styling — restored to the original
-  // Metronic preview look: taller rows, soft accent background on hover/active.
+  // Global classNames for consistent styling
   const classNames: AccordionMenuClassNames = {
     root: 'lg:ps-1 space-y-3',
     group: 'gap-px',
     label:
       'uppercase text-xs font-medium text-muted-foreground/70 pt-2.25 pb-px',
     separator: '',
-    item: 'h-11 px-3 text-[15px] font-medium text-foreground/85 hover:bg-accent hover:text-foreground data-[selected=true]:bg-accent data-[selected=true]:text-foreground data-[selected=true]:font-semibold',
+    item: 'h-8 hover:bg-transparent text-accent-foreground hover:text-primary data-[selected=true]:text-primary data-[selected=true]:bg-muted data-[selected=true]:font-medium',
     sub: '',
     subTrigger:
-      'h-11 px-3 text-[15px] font-medium text-foreground/85 hover:bg-accent hover:text-foreground data-[selected=true]:bg-accent data-[selected=true]:text-foreground data-[selected=true]:font-semibold',
+      'h-8 hover:bg-transparent text-accent-foreground hover:text-primary data-[selected=true]:text-primary data-[selected=true]:bg-muted data-[selected=true]:font-medium',
     subContent: 'py-0',
     indicator: '',
   };
@@ -108,18 +107,13 @@ export function SidebarMenu() {
         <AccordionMenuItem
           key={index}
           value={item.path || ''}
-          className="text-[15px] font-medium"
+          className="text-sm font-medium"
         >
           <Link
             href={item.path || '#'}
-            className="flex items-center grow gap-3"
+            className="flex items-center grow gap-2"
           >
-            {item.icon && (
-              <item.icon
-                data-slot="accordion-menu-icon"
-                className="size-5"
-              />
-            )}
+            {item.icon && <item.icon data-slot="accordion-menu-icon" />}
             <span data-slot="accordion-menu-title">{item.title}</span>
           </Link>
         </AccordionMenuItem>

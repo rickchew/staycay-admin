@@ -7,29 +7,19 @@ function withSearch(path: string, search: string): string {
 }
 
 /**
- * Builds the post-sign-in path. `usePathname()` may return the browser path
- * (`/demo5/account`) or the rewritten internal path (`/account`); handle both.
+ * Builds the post-sign-in path. Staycay uses unprefixed routes (the multi-demo
+ * URL scheme from the Metronic template was dropped), so this just returns the
+ * current pathname unchanged — stripping any legacy `/demoN` prefix if present.
  */
 export function callbackPathForDemoRoute(
-  demo: DemoId,
+  _demo: DemoId,
   pathname: string,
   search: string,
 ): string {
   const normalized = pathname && pathname !== '' ? pathname : '/';
-
   const seg = normalized.match(DEMO_SEGMENT_RE);
-  if (seg && seg[1] === demo) {
-    const rest = seg[2];
-    const path =
-      rest == null || rest === '' || rest === '/'
-        ? `/${demo}/`
-        : `/${demo}${rest}`;
-    return withSearch(path, search);
-  }
-
-  const path =
-    normalized === '/' ? `/${demo}/` : `/${demo}${normalized}`;
-  return withSearch(path, search);
+  const stripped = seg ? seg[2] || '/' : normalized;
+  return withSearch(stripped, search);
 }
 
 /** Reject open redirects; only same-origin relative paths. */

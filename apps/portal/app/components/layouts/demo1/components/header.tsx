@@ -116,11 +116,12 @@ export function Header() {
           </div>
         </div>
 
-        {/* Main Content (MegaMenu or Breadcrumbs) */}
+        {/* Main Content — keep room for breadcrumbs on Metronic-era /account
+            pages; Staycay routes intentionally leave this slot empty. */}
         {pathname.startsWith('/account') ? (
           <Breadcrumb />
         ) : (
-          !mobileMode && <MegaMenu />
+          <div className="grow" />
         )}
 
         {/* HeaderTopbar */}
@@ -152,30 +153,6 @@ export function Header() {
                     className="size-9 hover:bg-primary/10 hover:[&_svg]:text-primary"
                   >
                     <Bell className="size-4.5!" />
-                  </Button>
-                }
-              />
-              <ChatSheet
-                trigger={
-                  <Button
-                    variant="ghost"
-                    mode="icon"
-                    shape="circle"
-                    className="size-9 hover:bg-primary/10 hover:[&_svg]:text-primary"
-                  >
-                    <MessageCircleMore className="size-4.5!" />
-                  </Button>
-                }
-              />
-              <AppsDropdownMenu
-                trigger={
-                  <Button
-                    variant="ghost"
-                    mode="icon"
-                    shape="circle"
-                    className="size-9 hover:bg-primary/10 hover:[&_svg]:text-primary"
-                  >
-                    <LayoutGrid className="size-4.5!" />
                   </Button>
                 }
               />
